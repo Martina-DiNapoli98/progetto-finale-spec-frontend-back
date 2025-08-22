@@ -11,7 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+// Usa la porta da environment variable per Railway
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(
@@ -19,11 +20,32 @@ app.use(
         skip: (req) => req.method === 'OPTIONS',
     })
 );
+
+// Configura CORS più specifica
 app.use(cors({
-    origin: '*',
+    origin: function (origin, callback) {
+        // Permetti richieste senza origin (come da mobile apps o curl)
+        if (!origin) return callback(null, true);
+        
+        // Lista di domini permessi
+        const allowedOrigins = [
+            'https://tuo-frontend.netlify.app',
+            'http://localhost:3000',
+            'http://localhost:5173' // se usi Vite
+        ];
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: 'Infinity' }));
+
+app.use(express.json({ limit: '50mb' })); // Limite più ragionevole
 
 // **CACHE in memoria** for each resource type
 const cache = {};
