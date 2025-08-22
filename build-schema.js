@@ -3,17 +3,22 @@ import path from 'path';
 import ts from 'typescript';
 import { fileURLToPath } from 'url';
 
+
+
 // Create __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Verifica l'esistenza del file types.ts prima di avviare il server
-const typesFilePath = path.join(__dirname, 'types.ts');
+// Sostituisci la verifica iniziale con:
+let typesFilePath = path.join(__dirname, 'types.ts');
 if (!existsSync(typesFilePath)) {
-    console.error("⛔ Errore: Il file types.ts non esiste. Questo file è necessario per il funzionamento del server. Per favore, crea il file e riavvia il server.");
-    process.exit(1); // Termina il processo con un codice di errore
+    typesFilePath = path.join(__dirname, 'types.js');
+    if (!existsSync(typesFilePath)) {
+        console.error("⛔ Errore: Nessun file types trovato");
+        process.exit(1);
+    }
 }
-
 function generateSchemaFromTypes() {
   // Read the types.ts file
   const typesPath = path.join(__dirname, 'types.ts');
