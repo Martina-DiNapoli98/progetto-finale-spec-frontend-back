@@ -22,24 +22,31 @@ app.use(
 );
 
 // Configura CORS più specifica
+const allowedOrigins = [
+    'https://viaggivivi.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+];
+
 app.use(cors({
-    origin: function (origin, callback) {
-        // Permetti richieste senza origin (come da mobile apps o curl)
+    origin: function(origin, callback) {
+        // Permetti richieste senza origin (curl, mobile apps)
         if (!origin) return callback(null, true);
-        
-        // Lista di domini permessi
-        const allowedOrigins = [
-            'https://viaggivivi.netlify.app/travel',
-            'http://localhost:3000',
-            'http://localhost:5173' // se usi Vite
-        ];
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
+
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
         }
     },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Gestione delle richieste preflight OPTIONS
+app.options('*', cors({
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
