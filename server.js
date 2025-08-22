@@ -29,7 +29,7 @@ app.use(cors({
         
         // Lista di domini permessi
         const allowedOrigins = [
-            'https://tuo-frontend.netlify.app',
+            'https://viaggivivi.netlify.app/travel',
             'http://localhost:3000',
             'http://localhost:5173' // se usi Vite
         ];
