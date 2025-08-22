@@ -7,24 +7,24 @@ import cors from "cors";
 import morgan from "morgan";
 import { validators, readonlyProperties } from './schema.js';
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// Usa la porta da environment variable per Railway
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(morgan('dev'));
-
-// ✅ CONFIGURAZIONE CORS CORRETTA - SEMPLIFICATA
+// ✅ CONFIGURAZIONE CORS SEMPLIFICATA E FUNZIONANTE
 const allowedOrigins = [
     'https://viaggivivi.netlify.app',
     'http://localhost:3000',
     'http://localhost:5173'
 ];
 
-// Configurazione CORS principale
+// Middleware
+app.use(morgan('dev'));
+
+// Middleware CORS principale
 app.use(cors({
     origin: function (origin, callback) {
         // Permetti richieste senza origin (mobile apps, curl, etc.)
@@ -61,15 +61,27 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.json({ limit: '50mb' }));
+// ✅ Gestione esplicita delle richieste OPTIONS
+app.options('*', (req, res) => {
+    const origin = req.headers.origin;
+    
+    if (origin && allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    }
+    
+    res.status(200).send();
+});
 
-// ... il resto del tuo codice rimane invariato ...
+app.use(express.json({ limit: '50mb' })); // Limite più ragionevole
+
+// **CACHE in memoria** for each resource type
 const cache = {};
+
+// **Coda per scritture asincrone** for each resource type
 const writeQueues = {};
-
-// ... tutte le altre funzioni e routes ... // Limite più ragionevole
-
-
 
 // Helper to get plural form (basic pluralization rules)
 function getPlural(singular) {
@@ -144,7 +156,7 @@ const loadData = async (type) => {
                     if (!Array.isArray(loadedData)) {
                         throw new Error(`Errore di struttura nel file ${type}.json: il file deve contenere un array.`);
                     } else {
-                        // Valida ogni elemento nell'array usando il validator appropriato
+                        // Valida ogni elemento nell'array usando el validator appropriato
                         const validator = validators[type];
                         const invalidItems = [];
                         
@@ -210,6 +222,15 @@ const saveData = async (type) => {
         }
     });
 };
+
+// ✅ Endpoint di test CORS
+app.get('/cors-test', (req, res) => {
+    res.json({ 
+        message: 'CORS test successful',
+        timestamp: new Date().toISOString(),
+        allowedOrigins: allowedOrigins
+    });
+});
 
 // Dynamically create routes for each resource type
 const loadPromises = resourceTypes.map(type => {
